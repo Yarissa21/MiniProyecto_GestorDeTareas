@@ -1,1 +1,5 @@
-Base de datos PostgreSQL
+Base de datos del proyecto
+
+Tecnologias:
+- PostgreSQL
+- Prisma
