@@ -12,3 +12,18 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Tarea {
+  id             Int       @id @default(autoincrement())
+  titulo         String
+  descripcion    String?
+  fechaEntrega   DateTime
+  estado         Estado    @default(PENDIENTE)
+  creadaEn       DateTime  @default(now())
+}
+
+enum Estado {
+  PENDIENTE
+  EN_PROCESO
+  FINALIZADO
+}
