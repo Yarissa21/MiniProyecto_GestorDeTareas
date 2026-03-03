@@ -1,13 +1,13 @@
 import { useState } from "react";
 
-type Estado = "Pendiente" | "En proceso" | "Finalizado";
+type Estado = "PENDIENTE" | "EN_PROCESO" | "FINALIZADO";
 
 interface Tarea {
   id: number;
   titulo: string;
   descripcion: string;
   estado: Estado;
-  fecha: string;
+  fechaEntrega: string;
 }
 
 function App() {
@@ -15,27 +15,75 @@ function App() {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
-  const [estado, setEstado] = useState<Estado>("Pendiente");
-  const [fecha, setFecha] = useState("");
+  const [estado, setEstado] = useState<Estado>("PENDIENTE");
+  const [fechaEntrega, setFechaEntrega] = useState("");
+  const [errorTitulo, setErrorTitulo] = useState("");
+  const [errorDescripcion, setErrorDescripcion] = useState("");
+  const [errorFecha, setErrorFecha] = useState("");
+  const [mensajeConfirmacion, setMensajeConfirmacion] = useState("");
 
   const crearTarea = () => {
-    if (!titulo.trim()) return;
+    setErrorTitulo("");
+    setErrorDescripcion("");
+    setErrorFecha("");
+    setMensajeConfirmacion("");
 
-    const nuevaTarea: Tarea = {
-      id: Date.now(),
+    let hayError = false;
+
+    if (!titulo.trim()) {
+      setErrorTitulo("El título es obligatorio.");
+      hayError = true;
+    }
+
+    if (!descripcion.trim()) {
+      setErrorDescripcion("La descripción es obligatoria.");
+      hayError = true;
+    }
+
+    if (!fechaEntrega) {
+      setErrorFecha("La fecha límite es obligatoria.");
+      hayError = true;
+    } else {
+      const fechaSeleccionada = new Date(fechaEntrega + "T00:00:00.000Z");
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+
+      if (fechaSeleccionada < hoy) {
+        setErrorFecha("La fecha límite no puede ser del pasado.");
+        hayError = true;
+      }
+    }
+
+    if (hayError) return;
+
+    const fechaISO = new Date(fechaEntrega + "T00:00:00.000Z").toISOString();
+
+    const nuevaTarea = {
       titulo,
       descripcion,
       estado,
-      fecha,
+      fechaEntrega: fechaISO,
     };
 
-    setTareas([...tareas, nuevaTarea]);
-
-    setTitulo("");
-    setDescripcion("");
-    setEstado("Pendiente");
-    setFecha("");
-    setShowModal(false);
+    fetch("http://localhost:3000/tareas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(nuevaTarea),
+    })
+      .then((res) => res.json())
+      .then((tareaCreada) => {
+        setTareas([...tareas, tareaCreada]);
+        setTitulo("");
+        setDescripcion("");
+        setEstado("PENDIENTE");
+        setFechaEntrega("");
+        setShowModal(false);
+        setMensajeConfirmacion("Tarea creada exitosamente.");
+      })
+      .catch((err) => {
+        console.error("Error al crear tarea:", err);
+        setErrorTitulo("Hubo un error al crear la tarea. (No hay backend XD, no te asustes)");
+      });
   };
 
   const eliminarTarea = (id: number) => {
@@ -43,15 +91,11 @@ function App() {
   };
 
   const renderColumna = (estadoColumna: Estado) => {
-    const tareasFiltradas = tareas.filter(
-      (t) => t.estado === estadoColumna
-    );
+    const tareasFiltradas = tareas.filter((t) => t.estado === estadoColumna);
 
     return (
       <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-xl flex flex-col">
-        <h2 className="text-xl font-semibold mb-4">
-          {estadoColumna}
-        </h2>
+        <h2 className="text-xl font-semibold mb-4">{estadoColumna}</h2>
 
         <div className="flex-1 space-y-3">
           {tareasFiltradas.length === 0 && (
@@ -63,17 +107,12 @@ function App() {
               key={tarea.id}
               className="bg-white rounded-lg p-4 shadow-md"
             >
-              <h3 className="font-semibold text-lg">
-                {tarea.titulo}
-              </h3>
+              <h3 className="font-semibold text-lg">{tarea.titulo}</h3>
+              <p className="text-sm text-gray-600">{tarea.descripcion}</p>
 
-              <p className="text-sm text-gray-600">
-                {tarea.descripcion}
-              </p>
-
-              {tarea.fecha && (
+              {tarea.fechaEntrega && (
                 <p className="text-xs text-gray-500 mt-2">
-                  📅 Entrega: {tarea.fecha}
+                  📅 Entrega: {new Date(tarea.fechaEntrega).toLocaleDateString()}
                 </p>
               )}
 
@@ -91,70 +130,84 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen p-8">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-white drop-shadow-md">
-          Gestor de Tareas
-        </h1>
+    <div className="relative min-h-screen p-8 overflow-hidden">
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg shadow-md transition"
-        >
-          + Agregar tarea
-        </button>
+      <div className="wave"></div>
+      <div className="wave"></div>
+      <div className="wave"></div>
+
+      <div className="relative z-10">
+
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-white drop-shadow-md">
+            Gestor de Tareas
+          </h1>
+
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg shadow-md transition"
+          >
+            + Agregar tarea
+          </button>
+        </div>
+
+        {mensajeConfirmacion && (
+          <p className="text-green-600 font-semibold mb-4 bg-green-100 p-2 rounded">
+            {mensajeConfirmacion}
+          </p>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[80vh]">
+          {renderColumna("PENDIENTE")}
+          {renderColumna("EN_PROCESO")}
+          {renderColumna("FINALIZADO")}
+        </div>
       </div>
 
-      {/* Columnas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[80vh]">
-        {renderColumna("Pendiente")}
-        {renderColumna("En proceso")}
-        {renderColumna("Finalizado")}
-      </div>
-
-      {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-20">
           <div className="bg-white rounded-xl p-8 w-full max-w-md shadow-2xl">
-            <h2 className="text-2xl font-semibold mb-4">
-              Nueva tarea
-            </h2>
+            <h2 className="text-2xl font-semibold mb-4">Nueva tarea</h2>
 
             <input
               type="text"
-              placeholder="Título"
+              placeholder="Título (obligatorio)"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 mb-4"
+              className="w-full border rounded-lg px-4 py-2 mb-1"
             />
+            {errorTitulo && (
+              <p className="text-red-600 text-sm mb-3">{errorTitulo}</p>
+            )}
 
             <textarea
-              placeholder="Descripción"
+              placeholder="Descripción (obligatoria)"
               value={descripcion}
-              onChange={(e) =>
-                setDescripcion(e.target.value)
-              }
-              className="w-full border rounded-lg px-4 py-2 mb-4"
+              onChange={(e) => setDescripcion(e.target.value)}
+              className="w-full border rounded-lg px-4 py-2 mb-1"
             />
+            {errorDescripcion && (
+              <p className="text-red-600 text-sm mb-3">{errorDescripcion}</p>
+            )}
 
             <input
               type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 mb-4"
+              value={fechaEntrega}
+              onChange={(e) => setFechaEntrega(e.target.value)}
+              className="w-full border rounded-lg px-4 py-2 mb-1"
             />
+            {errorFecha && (
+              <p className="text-red-600 text-sm mb-3">{errorFecha}</p>
+            )}
 
             <select
               value={estado}
-              onChange={(e) =>
-                setEstado(e.target.value as Estado)
-              }
+              onChange={(e) => setEstado(e.target.value as Estado)}
               className="w-full border rounded-lg px-4 py-2 mb-4"
             >
-              <option>Pendiente</option>
-              <option>En proceso</option>
-              <option>Finalizado</option>
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="EN_PROCESO">En proceso</option>
+              <option value="FINALIZADO">Finalizado</option>
             </select>
 
             <div className="flex justify-end gap-3">
@@ -175,6 +228,7 @@ function App() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
