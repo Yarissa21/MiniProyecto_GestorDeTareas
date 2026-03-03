@@ -82,7 +82,7 @@ function App() {
       })
       .catch((err) => {
         console.error("Error al crear tarea:", err);
-        setErrorTitulo("Hubo un error al crear la tarea.");
+        setErrorTitulo("Hubo un error al crear la tarea. (No hay backend XD, no te asustes)");
       });
   };
 
@@ -130,34 +130,42 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-white drop-shadow-md">
-          Gestor de Tareas
-        </h1>
+    <div className="relative min-h-screen p-8 overflow-hidden">
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg shadow-md transition"
-        >
-          + Agregar tarea
-        </button>
-      </div>
+      <div className="wave"></div>
+      <div className="wave"></div>
+      <div className="wave"></div>
 
-      {mensajeConfirmacion && (
-        <p className="text-green-600 font-semibold mb-4 bg-green-100 p-2 rounded">
-          {mensajeConfirmacion}
-        </p>
-      )}
+      <div className="relative z-10">
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[80vh]">
-        {renderColumna("PENDIENTE")}
-        {renderColumna("EN_PROCESO")}
-        {renderColumna("FINALIZADO")}
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-white drop-shadow-md">
+            Gestor de Tareas
+          </h1>
+
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg shadow-md transition"
+          >
+            + Agregar tarea
+          </button>
+        </div>
+
+        {mensajeConfirmacion && (
+          <p className="text-green-600 font-semibold mb-4 bg-green-100 p-2 rounded">
+            {mensajeConfirmacion}
+          </p>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[80vh]">
+          {renderColumna("PENDIENTE")}
+          {renderColumna("EN_PROCESO")}
+          {renderColumna("FINALIZADO")}
+        </div>
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-20">
           <div className="bg-white rounded-xl p-8 w-full max-w-md shadow-2xl">
             <h2 className="text-2xl font-semibold mb-4">Nueva tarea</h2>
 
@@ -220,6 +228,7 @@ function App() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
