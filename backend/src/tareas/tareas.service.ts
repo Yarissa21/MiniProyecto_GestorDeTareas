@@ -16,4 +16,26 @@ export class TareasService {
       },
     });
   }
+
+  async listarTareas() {
+    const tareas = await this.prisma.tarea.findMany({
+      orderBy: {
+        fechaEntrega: 'asc',
+      },
+      select: {
+        id: true,
+        titulo: true,
+        descripcion: true,
+        fechaEntrega: true,
+        estado: true,
+      },
+    });
+
+    if (tareas.length === 0) {
+      return { mensaje: 'No hay tareas registradas.' };
+    }
+
+    return tareas;
+  }
+
 }

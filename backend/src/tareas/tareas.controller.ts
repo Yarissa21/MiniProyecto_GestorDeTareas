@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get } from '@nestjs/common';
 import { TareasService } from './tareas.service';
 import { CreateTareaDto } from './dto/create-tarea.dto';
 
@@ -10,4 +10,10 @@ export class TareasController {
   async crear(@Body() createTareaDto: CreateTareaDto) {
     return this.tareasService.crearTarea(createTareaDto);
   }
+
+  @Get()
+  async listar() {
+    return this.tareasService.listarTareas();
+  }
+
 }
