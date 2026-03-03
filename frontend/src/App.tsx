@@ -7,7 +7,7 @@ interface Tarea {
   titulo: string;
   descripcion: string;
   estado: Estado;
-  fecha: string;
+  fechaEntrega: string;
 }
 
 function App() {
@@ -16,26 +16,36 @@ function App() {
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [estado, setEstado] = useState<Estado>("Pendiente");
-  const [fecha, setFecha] = useState("");
+  const [fechaEntrega, setFechaEntrega] = useState("");
 
   const crearTarea = () => {
     if (!titulo.trim()) return;
 
-    const nuevaTarea: Tarea = {
-      id: Date.now(),
+    // Convertir fecha YYYY-MM-DD a ISO string con hora fija
+    const fechaISO = fechaEntrega ? new Date(fechaEntrega + "T12:00:00.000Z").toISOString() : new Date().toISOString();
+
+    const nuevaTarea = {
       titulo,
       descripcion,
       estado,
-      fecha,
+      fechaEntrega: fechaISO,
     };
 
-    setTareas([...tareas, nuevaTarea]);
-
-    setTitulo("");
-    setDescripcion("");
-    setEstado("Pendiente");
-    setFecha("");
-    setShowModal(false);
+    fetch("http://localhost:3000/tareas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(nuevaTarea),
+    })
+      .then((res) => res.json())
+      .then((tareaCreada) => {
+        setTareas([...tareas, tareaCreada]);
+        setTitulo("");
+        setDescripcion("");
+        setEstado("Pendiente");
+        setFechaEntrega("");
+        setShowModal(false);
+      })
+      .catch((err) => console.error("Error al crear tarea:", err));
   };
 
   const eliminarTarea = (id: number) => {
@@ -43,15 +53,11 @@ function App() {
   };
 
   const renderColumna = (estadoColumna: Estado) => {
-    const tareasFiltradas = tareas.filter(
-      (t) => t.estado === estadoColumna
-    );
+    const tareasFiltradas = tareas.filter((t) => t.estado === estadoColumna);
 
     return (
       <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-xl flex flex-col">
-        <h2 className="text-xl font-semibold mb-4">
-          {estadoColumna}
-        </h2>
+        <h2 className="text-xl font-semibold mb-4">{estadoColumna}</h2>
 
         <div className="flex-1 space-y-3">
           {tareasFiltradas.length === 0 && (
@@ -63,17 +69,12 @@ function App() {
               key={tarea.id}
               className="bg-white rounded-lg p-4 shadow-md"
             >
-              <h3 className="font-semibold text-lg">
-                {tarea.titulo}
-              </h3>
+              <h3 className="font-semibold text-lg">{tarea.titulo}</h3>
+              <p className="text-sm text-gray-600">{tarea.descripcion}</p>
 
-              <p className="text-sm text-gray-600">
-                {tarea.descripcion}
-              </p>
-
-              {tarea.fecha && (
+              {tarea.fechaEntrega && (
                 <p className="text-xs text-gray-500 mt-2">
-                  📅 Entrega: {tarea.fecha}
+                  📅 Entrega: {new Date(tarea.fechaEntrega).toLocaleDateString()}
                 </p>
               )}
 
@@ -117,9 +118,7 @@ function App() {
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
           <div className="bg-white rounded-xl p-8 w-full max-w-md shadow-2xl">
-            <h2 className="text-2xl font-semibold mb-4">
-              Nueva tarea
-            </h2>
+            <h2 className="text-2xl font-semibold mb-4">Nueva tarea</h2>
 
             <input
               type="text"
@@ -132,29 +131,25 @@ function App() {
             <textarea
               placeholder="Descripción"
               value={descripcion}
-              onChange={(e) =>
-                setDescripcion(e.target.value)
-              }
+              onChange={(e) => setDescripcion(e.target.value)}
               className="w-full border rounded-lg px-4 py-2 mb-4"
             />
 
             <input
               type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
+              value={fechaEntrega}
+              onChange={(e) => setFechaEntrega(e.target.value)}
               className="w-full border rounded-lg px-4 py-2 mb-4"
             />
 
             <select
               value={estado}
-              onChange={(e) =>
-                setEstado(e.target.value as Estado)
-              }
+              onChange={(e) => setEstado(e.target.value as Estado)}
               className="w-full border rounded-lg px-4 py-2 mb-4"
             >
-              <option>Pendiente</option>
-              <option>En proceso</option>
-              <option>Finalizado</option>
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="EN_PROCESO">En proceso</option>
+              <option value="FINALIZADO">Finalizado</option>
             </select>
 
             <div className="flex justify-end gap-3">
