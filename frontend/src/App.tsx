@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-type Estado = "Pendiente" | "En proceso" | "Finalizado";
+type Estado = "PENDIENTE" | "EN_PROCESO" | "FINALIZADO";
 
 interface Tarea {
   id: number;
@@ -15,14 +15,27 @@ function App() {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
-  const [estado, setEstado] = useState<Estado>("Pendiente");
+  const [estado, setEstado] = useState<Estado>("PENDIENTE");
   const [fechaEntrega, setFechaEntrega] = useState("");
+  const [error, setError] = useState("");
+  const [mensajeConfirmacion, setMensajeConfirmacion] = useState("");
 
   const crearTarea = () => {
-    if (!titulo.trim()) return;
+    setError("");
+    setMensajeConfirmacion("");
 
-    // Convertir fecha YYYY-MM-DD a ISO string con hora fija
-    const fechaISO = fechaEntrega ? new Date(fechaEntrega + "T12:00:00.000Z").toISOString() : new Date().toISOString();
+    // 🔹 Validaciones
+    if (!descripcion.trim()) {
+      setError("La descripción es obligatoria.");
+      return;
+    }
+
+    if (!fechaEntrega) {
+      setError("La fecha límite es obligatoria.");
+      return;
+    }
+
+    const fechaISO = new Date(fechaEntrega + "T12:00:00.000Z").toISOString();
 
     const nuevaTarea = {
       titulo,
@@ -41,11 +54,15 @@ function App() {
         setTareas([...tareas, tareaCreada]);
         setTitulo("");
         setDescripcion("");
-        setEstado("Pendiente");
+        setEstado("PENDIENTE");
         setFechaEntrega("");
         setShowModal(false);
+        setMensajeConfirmacion("✅ Tarea creada exitosamente.");
       })
-      .catch((err) => console.error("Error al crear tarea:", err));
+      .catch((err) => {
+        console.error("Error al crear tarea:", err);
+        setError("Hubo un error al crear la tarea.");
+      });
   };
 
   const eliminarTarea = (id: number) => {
@@ -107,11 +124,17 @@ function App() {
         </button>
       </div>
 
+      {/* Mensajes */}
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+      {mensajeConfirmacion && (
+        <p className="text-green-600 mb-4">{mensajeConfirmacion}</p>
+      )}
+
       {/* Columnas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[80vh]">
-        {renderColumna("Pendiente")}
-        {renderColumna("En proceso")}
-        {renderColumna("Finalizado")}
+        {renderColumna("PENDIENTE")}
+        {renderColumna("EN_PROCESO")}
+        {renderColumna("FINALIZADO")}
       </div>
 
       {/* Modal */}
@@ -129,7 +152,7 @@ function App() {
             />
 
             <textarea
-              placeholder="Descripción"
+              placeholder="Descripción (obligatoria)"
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               className="w-full border rounded-lg px-4 py-2 mb-4"
