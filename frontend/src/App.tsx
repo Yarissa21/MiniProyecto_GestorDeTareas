@@ -17,25 +17,46 @@ function App() {
   const [descripcion, setDescripcion] = useState("");
   const [estado, setEstado] = useState<Estado>("PENDIENTE");
   const [fechaEntrega, setFechaEntrega] = useState("");
-  const [error, setError] = useState("");
+  const [errorTitulo, setErrorTitulo] = useState("");
+  const [errorDescripcion, setErrorDescripcion] = useState("");
+  const [errorFecha, setErrorFecha] = useState("");
   const [mensajeConfirmacion, setMensajeConfirmacion] = useState("");
 
   const crearTarea = () => {
-    setError("");
+    setErrorTitulo("");
+    setErrorDescripcion("");
+    setErrorFecha("");
     setMensajeConfirmacion("");
 
-    // 🔹 Validaciones
+    let hayError = false;
+
+    if (!titulo.trim()) {
+      setErrorTitulo("El título es obligatorio.");
+      hayError = true;
+    }
+
     if (!descripcion.trim()) {
-      setError("La descripción es obligatoria.");
-      return;
+      setErrorDescripcion("La descripción es obligatoria.");
+      hayError = true;
     }
 
     if (!fechaEntrega) {
-      setError("La fecha límite es obligatoria.");
-      return;
+      setErrorFecha("La fecha límite es obligatoria.");
+      hayError = true;
+    } else {
+      const fechaSeleccionada = new Date(fechaEntrega + "T00:00:00.000Z");
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+
+      if (fechaSeleccionada < hoy) {
+        setErrorFecha("La fecha límite no puede ser del pasado.");
+        hayError = true;
+      }
     }
 
-    const fechaISO = new Date(fechaEntrega + "T12:00:00.000Z").toISOString();
+    if (hayError) return;
+
+    const fechaISO = new Date(fechaEntrega + "T00:00:00.000Z").toISOString();
 
     const nuevaTarea = {
       titulo,
@@ -57,11 +78,11 @@ function App() {
         setEstado("PENDIENTE");
         setFechaEntrega("");
         setShowModal(false);
-        setMensajeConfirmacion("✅ Tarea creada exitosamente.");
+        setMensajeConfirmacion("Tarea creada exitosamente.");
       })
       .catch((err) => {
         console.error("Error al crear tarea:", err);
-        setError("Hubo un error al crear la tarea.");
+        setErrorTitulo("Hubo un error al crear la tarea.");
       });
   };
 
@@ -110,7 +131,6 @@ function App() {
 
   return (
     <div className="min-h-screen p-8">
-      {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-white drop-shadow-md">
           Gestor de Tareas
@@ -124,20 +144,18 @@ function App() {
         </button>
       </div>
 
-      {/* Mensajes */}
-      {error && <p className="text-red-500 mb-4">{error}</p>}
       {mensajeConfirmacion && (
-        <p className="text-green-600 mb-4">{mensajeConfirmacion}</p>
+        <p className="text-green-600 font-semibold mb-4 bg-green-100 p-2 rounded">
+          {mensajeConfirmacion}
+        </p>
       )}
 
-      {/* Columnas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[80vh]">
         {renderColumna("PENDIENTE")}
         {renderColumna("EN_PROCESO")}
         {renderColumna("FINALIZADO")}
       </div>
 
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
           <div className="bg-white rounded-xl p-8 w-full max-w-md shadow-2xl">
@@ -145,25 +163,34 @@ function App() {
 
             <input
               type="text"
-              placeholder="Título"
+              placeholder="Título (obligatorio)"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 mb-4"
+              className="w-full border rounded-lg px-4 py-2 mb-1"
             />
+            {errorTitulo && (
+              <p className="text-red-600 text-sm mb-3">{errorTitulo}</p>
+            )}
 
             <textarea
               placeholder="Descripción (obligatoria)"
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 mb-4"
+              className="w-full border rounded-lg px-4 py-2 mb-1"
             />
+            {errorDescripcion && (
+              <p className="text-red-600 text-sm mb-3">{errorDescripcion}</p>
+            )}
 
             <input
               type="date"
               value={fechaEntrega}
               onChange={(e) => setFechaEntrega(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 mb-4"
+              className="w-full border rounded-lg px-4 py-2 mb-1"
             />
+            {errorFecha && (
+              <p className="text-red-600 text-sm mb-3">{errorFecha}</p>
+            )}
 
             <select
               value={estado}
