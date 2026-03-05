@@ -38,4 +38,16 @@ export class TareasService {
     return tareas;
   }
 
+  async actualizarTarea(id: number, data: CreateTareaDto) {
+  return this.prisma.tarea.update({
+    where: { id: id },
+    data: {
+      titulo: data.titulo,
+      descripcion: data.descripcion,
+      fechaEntrega: data.fechaEntrega,
+      estado: data.estado,
+    },
+  });
+}
+
 }
