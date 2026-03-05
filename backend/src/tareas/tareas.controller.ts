@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Put, Delete, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Put, Delete, Patch, Param } from '@nestjs/common';
 import { TareasService } from './tareas.service';
 import { CreateTareaDto } from './dto/create-tarea.dto';
 
@@ -28,5 +28,9 @@ export class TareasController {
 async eliminar(@Param('id') id: string) {
   return this.tareasService.eliminarTarea(Number(id));
 }
-  
+ 
+@Patch(':id/estado')
+async cambiarEstado(@Param('id') id: string) {
+  return this.tareasService.cambiarEstado(Number(id));
+}
 }
