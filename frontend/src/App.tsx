@@ -30,165 +30,160 @@ function App() {
       .then((data) => setTareas(data))
       .catch((err) => console.error(err));
   }, []);
-
-  const crearTarea = () => {
-    setErrorTitulo("");
-    setErrorDescripcion("");
-    setErrorFecha("");
-    setMensajeConfirmacion("");
-
-    let hayError = false;
-
-    if (!titulo.trim()) {
-      setErrorTitulo("El título es obligatorio.");
-      hayError = true;
-    }
-
-    if (!descripcion.trim()) {
-      setErrorDescripcion("La descripción es obligatoria.");
-      hayError = true;
-    }
-
-    if (!fechaEntrega) {
-      setErrorFecha("La fecha límite es obligatoria.");
-      hayError = true;
-    } else {
-      const fechaSeleccionada = new Date(fechaEntrega);
+    const obtenerColorUrgencia = (fechaEntrega: string) => {
       const hoy = new Date();
       hoy.setHours(0, 0, 0, 0);
 
-      if (fechaSeleccionada < hoy) {
-        setErrorFecha("La fecha límite no puede ser del pasado.");
-        hayError = true;
-      }
-    }
+      const entrega = new Date(fechaEntrega);
+      entrega.setHours(0, 0, 0, 0);
 
-    if (hayError) return;
+      const diffTime = entrega.getTime() - hoy.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    const fechaObj = new Date(fechaEntrega);
-    fechaObj.setHours(23, 59, 0, 0);
-    const fechaISO = fechaObj.toISOString();
-
-    const nuevaTarea = {
-      titulo,
-      descripcion,
-      estado,
-      fechaEntrega: fechaISO,
+      if (diffDays < 0) return "bg-gray-400";       
+      if (diffDays <= 3) return "bg-red-600";      
+      if (diffDays <= 6) return "bg-yellow-500";    
+      return "bg-green-600";                      
     };
 
-    if (editandoId !== null) {
-      fetch(`http://localhost:3000/tareas/${editandoId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nuevaTarea),
-      })
-        .then((res) => res.json())
-        .then(() => {
-          fetch("http://localhost:3000/tareas")
-            .then((res) => res.json())
-            .then((data) => setTareas(data));
+    const [loading, setLoading] = useState(false);
+      {loading && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-lg">
+            <p className="text-lg font-semibold">Cargando...</p>
+          </div>
+        </div>
+      )}
 
-          setEditandoId(null);
-          setTitulo("");
-          setDescripcion("");
-          setEstado("PENDIENTE");
-          setFechaEntrega("");
-          setShowModal(false);
-          setMensajeConfirmacion("Tarea actualizada correctamente.");
+    const crearTarea = async () => {
+      setErrorTitulo("");
+      setErrorDescripcion("");
+      setErrorFecha("");
+      setMensajeConfirmacion("");
+
+      let hayError = false;
+      if (!titulo.trim()) { setErrorTitulo("El título es obligatorio."); hayError = true; }
+      if (!descripcion.trim()) { setErrorDescripcion("La descripción es obligatoria."); hayError = true; }
+      if (!fechaEntrega) { setErrorFecha("La fecha límite es obligatoria."); hayError = true; }
+      else {
+        const fechaSeleccionada = new Date(fechaEntrega);
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        if (fechaSeleccionada < hoy) { setErrorFecha("La fecha límite no puede ser del pasado."); hayError = true; }
+      }
+      if (hayError) return;
+
+      const [year, month, day] = fechaEntrega.split("-").map(Number);
+      const fechaISO = new Date(year, month - 1, day, 0, 0, 0, 0).toISOString();
+      const tareaPayload = { titulo, descripcion, estado, fechaEntrega: fechaISO };
+
+      try {
+        setLoading(true); // mostrar overlay de carga
+
+        let url = "http://localhost:3000/tareas";
+        let method = "POST";
+        if (editandoId !== null) { url += `/${editandoId}`; method = "PUT"; }
+
+        const res = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tareaPayload),
+        });
+
+        if (!res.ok) throw new Error("Error en la solicitud");
+
+        // Actualizamos estado localmente para que se vea instantáneo
+        const tareaRespuesta = await res.json();
+        if (editandoId !== null) setTareas(tareas.map(t => t.id === editandoId ? tareaRespuesta : t));
+        else setTareas([...tareas, tareaRespuesta]);
+
+        // Reset formulario
+        setTitulo(""); setDescripcion(""); setEstado("PENDIENTE"); setFechaEntrega(""); setShowModal(false);
+
+        // Esperamos un momento y recargamos suavemente
+        setTimeout(() => window.location.reload(), 500);
+
+      } catch (error) {
+        console.error(error);
+        alert("Ocurrió un error al guardar la tarea. Intenta de nuevo.");
+      } finally {
+        setLoading(false); // ocultar overlay
+      }
+    };
+
+    const eliminarTarea = (id: number) => {
+      fetch(`http://localhost:3000/tareas/${id}`, {
+        method: "DELETE",
+      })
+        .then(() => {
+          setTareas(tareas.filter((t) => t.id !== id));
         })
         .catch((err) => console.error(err));
+    };
 
-      return;
-    }
+    const editarTarea = (tarea: Tarea) => {
+      setTitulo(tarea.titulo);
+      setDescripcion(tarea.descripcion);
+      setEstado(tarea.estado);
+      setFechaEntrega(tarea.fechaEntrega.split("T")[0]);
+      setEditandoId(tarea.id);
+      setShowModal(true);
+    };
 
-    fetch("http://localhost:3000/tareas", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(nuevaTarea),
-    })
-      .then((res) => res.json())
-      .then((tareaCreada) => {
-        setTareas([...tareas, tareaCreada]);
-        setTitulo("");
-        setDescripcion("");
-        setEstado("PENDIENTE");
-        setFechaEntrega("");
-        setShowModal(false);
-        setMensajeConfirmacion("Tarea creada exitosamente.");
-      })
-      .catch((err) => {
-        console.error("Error al crear tarea:", err);
-      });
-  };
+    const renderColumna = (estadoColumna: Estado) => {
+      const tareasFiltradas = tareas.filter((t) => t.estado === estadoColumna);
 
-  const eliminarTarea = (id: number) => {
-    fetch(`http://localhost:3000/tareas/${id}`, {
-      method: "DELETE",
-    })
-      .then(() => {
-        setTareas(tareas.filter((t) => t.id !== id));
-      })
-      .catch((err) => console.error(err));
-  };
+      return (
+        <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-xl flex flex-col">
+          <h2 className="text-xl font-semibold mb-4">{estadoColumna}</h2>
 
-  const editarTarea = (tarea: Tarea) => {
-    setTitulo(tarea.titulo);
-    setDescripcion(tarea.descripcion);
-    setEstado(tarea.estado);
-    setFechaEntrega(tarea.fechaEntrega.split("T")[0]);
-    setEditandoId(tarea.id);
-    setShowModal(true);
-  };
+          <div className="flex-1 space-y-3">
+            {tareasFiltradas.length === 0 && (
+              <p className="text-gray-500">Sin tareas</p>
+            )}
 
-  const renderColumna = (estadoColumna: Estado) => {
-    const tareasFiltradas = tareas.filter((t) => t.estado === estadoColumna);
+            {tareasFiltradas.map((tarea) => (
+              <div
+                key={tarea.id}
+                className="relative bg-white rounded-lg p-4 shadow-md"
+              >
+                {tarea.fechaEntrega && (
+                  <div
+                    className={`absolute top-2 right-2 w-8 h-8 rounded-full shadow-md ${obtenerColorUrgencia(tarea.fechaEntrega)}`}
+                    title={`Entrega: ${new Date(tarea.fechaEntrega).toLocaleDateString()}`}
+                  ></div>
+                )}
 
-    return (
-      <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-xl flex flex-col">
-        <h2 className="text-xl font-semibold mb-4">{estadoColumna}</h2>
+                <h3 className="font-semibold text-lg">{tarea.titulo}</h3>
+                <p className="text-sm text-gray-600">{tarea.descripcion}</p>
 
-        <div className="flex-1 space-y-3">
-          {tareasFiltradas.length === 0 && (
-            <p className="text-gray-500">Sin tareas</p>
-          )}
+                {tarea.fechaEntrega && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    📅 Entrega: {new Date(tarea.fechaEntrega).toLocaleDateString()}
+                  </p>
+                )}
 
-          {tareasFiltradas.map((tarea) => (
-            <div
-              key={tarea.id}
-              className="bg-white rounded-lg p-4 shadow-md"
-            >
-              <h3 className="font-semibold text-lg">{tarea.titulo}</h3>
-              <p className="text-sm text-gray-600">{tarea.descripcion}</p>
+                <div className="flex gap-3 mt-3">
+                  <button
+                    onClick={() => editarTarea(tarea)}
+                    className="text-blue-500 text-sm"
+                  >
+                    Editar
+                  </button>
 
-              {tarea.fechaEntrega && (
-                <p className="text-xs text-gray-500 mt-2">
-                  📅 Entrega: {new Date(tarea.fechaEntrega).toLocaleDateString()}
-                </p>
-              )}
-
-              <div className="flex gap-3 mt-3">
-                <button
-                  onClick={() => editarTarea(tarea)}
-                  className="text-blue-500 text-sm"
-                >
-                  Editar
-                </button>
-
-                <button
-                  onClick={() => eliminarTarea(tarea.id)}
-                  className="text-red-500 text-sm"
-                >
-                  Eliminar
-                </button>
+                  <button
+                    onClick={() => eliminarTarea(tarea.id)}
+                    className="text-red-500 text-sm"
+                  >
+                    Eliminar
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
-    );
-  };
+      );
+    };
 
   return (
     <div className="relative min-h-screen p-8 overflow-hidden">
@@ -266,15 +261,16 @@ function App() {
               <p className="text-red-600 text-sm mb-3">{errorFecha}</p>
             )}
 
-            <select
-              value={estado}
-              onChange={(e) => setEstado(e.target.value as Estado)}
-              className="w-full border rounded-lg px-4 py-2 mb-4"
-            >
-              <option value="PENDIENTE">Pendiente</option>
-              <option value="EN_PROCESO">En proceso</option>
-              <option value="FINALIZADO">Finalizado</option>
-            </select>
+              <select
+                value={estado}
+                onChange={(e) => setEstado(e.target.value as Estado)}
+                disabled={editandoId === null}
+                className="w-full border rounded-lg px-4 py-2 mb-4 disabled:bg-gray-200 disabled:cursor-not-allowed"
+              >
+                <option value="PENDIENTE">Pendiente</option>
+                <option value="EN_PROCESO">En proceso</option>
+                <option value="FINALIZADO">Finalizado</option>
+              </select>
 
             <div className="flex justify-end gap-3">
               <button
