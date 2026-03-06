@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Get, Put, Delete, Patch, Param } from '@nestjs/common';
 import { TareasService } from './tareas.service';
 import { CreateTareaDto } from './dto/create-tarea.dto';
+import { Estado } from '@prisma/client';
 
 @Controller('tareas')
 export class TareasController {
@@ -30,7 +31,10 @@ async eliminar(@Param('id') id: string) {
 }
  
 @Patch(':id/estado')
-async cambiarEstado(@Param('id') id: string) {
-  return this.tareasService.cambiarEstado(Number(id));
+async cambiarEstado(
+  @Param('id') id: string,
+  @Body('estado') estado: Estado,
+) {
+  return this.tareasService.cambiarEstado(Number(id), estado);
 }
 }
