@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateTareaDto } from './dto/create-tarea.dto';
+import { Estado } from '@prisma/client';
 
 @Injectable()
 export class TareasService {
@@ -54,6 +55,23 @@ export class TareasService {
     return this.prisma.tarea.delete({
       where: { id: id },
     });
+}
+
+async cambiarEstado(id: number, estado: Estado) {
+  const tarea = await this.prisma.tarea.findUnique({
+    where: { id: id },
+  });
+
+  if (!tarea) {
+    return { mensaje: 'Tarea no encontrada' };
+  }
+
+  return this.prisma.tarea.update({
+    where: { id: id },
+    data: {
+      estado: estado,
+    },
+  });
 }
 
 }
