@@ -50,4 +50,14 @@ export class TareasService {
   });
 }
 
+async eliminarTarea(id: number) {
+    try {
+      return await this.prisma.tarea.delete({
+        where: { id },
+      });
+    } catch (error) {
+      return { mensaje: 'Tarea no encontrada o ya eliminada.' };
+    }
+  }
+
 }

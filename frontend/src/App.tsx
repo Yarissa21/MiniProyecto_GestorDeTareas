@@ -23,6 +23,9 @@ function App() {
   const [mensajeConfirmacion, setMensajeConfirmacion] = useState("");
 
   const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [tareaAEliminar, setTareaAEliminar] = useState<number | null>(null);
+
+  
 
   useEffect(() => {
     fetch("http://localhost:3000/tareas")
@@ -111,15 +114,29 @@ function App() {
       }
     };
 
-    const eliminarTarea = (id: number) => {
-      fetch(`http://localhost:3000/tareas/${id}`, {
-        method: "DELETE",
-      })
-        .then(() => {
-          setTareas(tareas.filter((t) => t.id !== id));
-        })
-        .catch((err) => console.error(err));
-    };
+    const confirmarEliminar = (id: number) => {
+  setTareaAEliminar(id);
+};
+
+const eliminarTarea = () => {
+  if (tareaAEliminar === null) return;
+  fetch(`http://localhost:3000/tareas/${tareaAEliminar}`, {
+    method: "DELETE",
+  })
+    .then((res) => {
+      if (!res.ok && res.status !== 404) throw new Error("Error al eliminar");
+      setTareas(tareas.filter((t) => t.id !== tareaAEliminar));
+
+      setMensajeConfirmacion("¡Tarea eliminada correctamente!");
+      setTimeout(() => setMensajeConfirmacion(""), 3000);  // ESTO ACABO DE AGREGAR
+
+      setTareaAEliminar(null);
+    })
+    .catch((err) => {
+      console.error(err);
+      setTareaAEliminar(null);
+    });
+};
 
     const editarTarea = (tarea: Tarea) => {
       setTitulo(tarea.titulo);
@@ -172,7 +189,7 @@ function App() {
                   </button>
 
                   <button
-                    onClick={() => eliminarTarea(tarea.id)}
+                    onClick={() => confirmarEliminar(tarea.id)}
                     className="text-red-500 text-sm"
                   >
                     Eliminar
@@ -291,7 +308,33 @@ function App() {
         </div>
       )}
 
+      {tareaAEliminar !== null && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-30">
+    <div className="bg-white rounded-xl p-8 w-full max-w-sm shadow-2xl text-center">
+      <h2 className="text-xl font-semibold mb-2">¿Eliminar tarea?</h2>
+      <p className="text-gray-600 mb-6">Esta acción no se puede deshacer.</p>
+      <div className="flex justify-center gap-4">
+        <button
+          onClick={() => setTareaAEliminar(null)}
+          className="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={eliminarTarea}
+          className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white"
+        >
+          Eliminar
+        </button>
+      </div>
     </div>
+  </div>
+)}
+
+      
+
+    </div>
+
   );
 }
 
