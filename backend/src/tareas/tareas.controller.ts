@@ -1,7 +1,7 @@
-import { Controller, Post, Body, Get, Put, Param, Delete } from '@nestjs/common';
-
+import { Controller, Post, Body, Get, Put, Delete, Patch, Param } from '@nestjs/common';
 import { TareasService } from './tareas.service';
 import { CreateTareaDto } from './dto/create-tarea.dto';
+import { Estado } from '@prisma/client';
 
 @Controller('tareas')
 export class TareasController {
@@ -26,8 +26,15 @@ export class TareasController {
   }  
 
   @Delete(':id')
-  async eliminar(@Param('id') id: string) {
-    return this.tareasService.eliminarTarea(Number(id));
-  }
-  
+async eliminar(@Param('id') id: string) {
+  return this.tareasService.eliminarTarea(Number(id));
+}
+ 
+@Patch(':id/estado')
+async cambiarEstado(
+  @Param('id') id: string,
+  @Body('estado') estado: Estado,
+) {
+  return this.tareasService.cambiarEstado(Number(id), estado);
+}
 }
