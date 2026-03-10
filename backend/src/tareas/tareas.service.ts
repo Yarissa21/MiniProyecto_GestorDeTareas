@@ -50,31 +50,8 @@ export class TareasService {
       },
     });
   }
-
+  
   async eliminarTarea(id: number) {
-    return this.prisma.tarea.delete({
-      where: { id: id },
-    });
-}
-
-async cambiarEstado(id: number, estado: Estado) {
-  const tarea = await this.prisma.tarea.findUnique({
-    where: { id: id },
-  });
-
-  if (!tarea) {
-    return { mensaje: 'Tarea no encontrada' };
-  }
-
-  return this.prisma.tarea.update({
-    where: { id: id },
-    data: {
-      estado: estado,
-    },
-  });
-}
-
-async eliminarTarea(id: number) {
     try {
       return await this.prisma.tarea.delete({
         where: { id },
@@ -82,6 +59,45 @@ async eliminarTarea(id: number) {
     } catch (error) {
       return { mensaje: 'Tarea no encontrada o ya eliminada.' };
     }
+  }
+
+  async cambiarEstado(id: number, estado: Estado) {
+   const tarea = await this.prisma.tarea.findUnique({
+    where: { id: id },
+   });
+
+   if (!tarea) {
+    return { mensaje: 'Tarea no encontrada' };
+   }
+
+   return this.prisma.tarea.update({
+     where: { id: id },
+     data: {
+      estado: estado,
+     },
+   });
+ }
+
+ async filtrarPorEstado(estado?: Estado) {
+    let tareas;
+
+    if (estado) {
+      tareas = await this.prisma.tarea.findMany({
+        where: { estado },
+        orderBy: { fechaEntrega: 'asc' },
+        select: { id: true, titulo: true, descripcion: true, fechaEntrega: true, estado: true },
+      });
+    } else {
+      tareas = await this.prisma.tarea.findMany({
+        orderBy: { fechaEntrega: 'asc' },
+        select: { id: true, titulo: true, descripcion: true, fechaEntrega: true, estado: true },
+      });
+    }
+
+    if (tareas.length === 0) {
+      return { mensaje: 'No hay tareas para el filtro seleccionado.' };
+    }
+    return tareas;
   }
 
 }
