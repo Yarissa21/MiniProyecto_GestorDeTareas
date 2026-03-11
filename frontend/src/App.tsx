@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 
+import { DndContext, closestCenter, useDraggable, useDroppable, type DragEndEvent } from "@dnd-kit/core";
+
 type Estado = "PENDIENTE" | "EN_PROCESO" | "FINALIZADO";
 
 interface Tarea {
@@ -147,57 +149,91 @@ const eliminarTarea = () => {
       setShowModal(true);
     };
 
+
+
+
+
+    const DraggableTarea = ({ tarea }: { tarea: Tarea }) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: tarea.id });
+  const style = {
+    transform: transform ? `translate(${transform.x}px, ${transform.y}px)` : undefined,
+    zIndex: isDragging ? 9999 : 1,
+    position: "relative" as const,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="relative bg-white rounded-lg p-4 shadow-md">
+      {/* Solo el titulo es arrastrable */}
+      <h3 {...listeners} {...attributes} className="font-semibold text-lg cursor-grab active:cursor-grabbing">
+        {tarea.titulo}
+      </h3>
+      <p className="text-sm text-gray-600">{tarea.descripcion}</p>
+      {tarea.fechaEntrega && (
+        <p className="text-xs text-gray-500 mt-2">
+          📅 Entrega: {new Date(tarea.fechaEntrega).toLocaleDateString()}
+        </p>
+      )}
+      {tarea.fechaEntrega && (
+        <div
+          className={`absolute top-2 right-2 w-8 h-8 rounded-full shadow-md ${obtenerColorUrgencia(tarea.fechaEntrega)}`}
+          title={`Entrega: ${new Date(tarea.fechaEntrega).toLocaleDateString()}`}
+        ></div>
+      )}
+      <div className="flex gap-3 mt-3">
+        <button onClick={() => editarTarea(tarea)} className="text-blue-500 text-sm">Editar</button>
+        <button onClick={() => confirmarEliminar(tarea.id)} className="text-red-500 text-sm">Eliminar</button>
+      </div>
+    </div>
+  );
+};
+
+const DroppableColumna = ({ estado, children }: { estado: string; children: React.ReactNode }) => {
+  const { setNodeRef, isOver } = useDroppable({ id: estado });
+  return (
+    <div ref={setNodeRef} className={`flex-1 space-y-3 ${isOver ? "bg-purple-100 rounded-lg transition" : ""}`}>
+      {children}
+    </div>
+  );
+};
+
+const handleDragEnd = async (event: DragEndEvent) => {
+  const { active, over } = event;
+  if (!over) return;
+  const nuevoEstado = over.id as Estado;
+  const tareaId = active.id as number;
+  const tarea = tareas.find(t => t.id === tareaId);
+  if (!tarea || tarea.estado === nuevoEstado) return;
+  const res = await fetch(`http://localhost:3000/tareas/${tareaId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...tarea, estado: nuevoEstado }),
+  });
+  if (res.ok) {
+    setTareas(tareas.map(t => t.id === tareaId ? { ...t, estado: nuevoEstado } : t));
+  }
+};
+
+
+
+
+
+
+
     const renderColumna = (estadoColumna: Estado) => {
       const tareasFiltradas = tareas.filter((t) => t.estado === estadoColumna);
 
       return (
-        <div className="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-xl flex flex-col">
+        <div className="bg-white/80 rounded-xl p-6 shadow-xl flex flex-col">
           <h2 className="text-xl font-semibold mb-4">{estadoColumna}</h2>
 
-          <div className="flex-1 space-y-3">
+          <DroppableColumna estado={estadoColumna}>
             {tareasFiltradas.length === 0 && (
               <p className="text-gray-500">Sin tareas</p>
             )}
 
-            {tareasFiltradas.map((tarea) => (
-              <div
-                key={tarea.id}
-                className="relative bg-white rounded-lg p-4 shadow-md"
-              >
-                {tarea.fechaEntrega && (
-                  <div
-                    className={`absolute top-2 right-2 w-8 h-8 rounded-full shadow-md ${obtenerColorUrgencia(tarea.fechaEntrega)}`}
-                    title={`Entrega: ${new Date(tarea.fechaEntrega).toLocaleDateString()}`}
-                  ></div>
-                )}
-
-                <h3 className="font-semibold text-lg">{tarea.titulo}</h3>
-                <p className="text-sm text-gray-600">{tarea.descripcion}</p>
-
-                {tarea.fechaEntrega && (
-                  <p className="text-xs text-gray-500 mt-2">
-                    📅 Entrega: {new Date(tarea.fechaEntrega).toLocaleDateString()}
-                  </p>
-                )}
-
-                <div className="flex gap-3 mt-3">
-                  <button
-                    onClick={() => editarTarea(tarea)}
-                    className="text-blue-500 text-sm"
-                  >
-                    Editar
-                  </button>
-
-                  <button
-                    onClick={() => confirmarEliminar(tarea.id)}
-                    className="text-red-500 text-sm"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+           {tareasFiltradas.map((tarea) => (
+  <DraggableTarea key={tarea.id} tarea={tarea} />
+))}
+          </DroppableColumna>
         </div>
       );
     };
@@ -218,9 +254,13 @@ const eliminarTarea = () => {
 
           <button
             onClick={() => {
-              setEditandoId(null);
-              setShowModal(true);
-            }}
+  setEditandoId(null);
+  setTitulo("");
+  setDescripcion("");
+  setEstado("PENDIENTE");
+  setFechaEntrega("");
+  setShowModal(true);
+}}
             className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg shadow-md transition"
           >
             + Agregar tarea
@@ -233,12 +273,16 @@ const eliminarTarea = () => {
           </p>
         )}
 
+        <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[80vh]">
           {renderColumna("PENDIENTE")}
           {renderColumna("EN_PROCESO")}
           {renderColumna("FINALIZADO")}
         </div>
+        </DndContext>
       </div>
+      
 
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-20">
