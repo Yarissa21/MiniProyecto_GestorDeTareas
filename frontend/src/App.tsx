@@ -17,6 +17,7 @@ function App() {
   const [descripcion, setDescripcion] = useState("");
   const [estado, setEstado] = useState<Estado>("Pendiente");
   const [fecha, setFecha] = useState("");
+  const [filtro, setFiltro] = useState("Todas");
 
   const crearTarea = () => {
     if (!titulo.trim()) return;
@@ -93,26 +94,57 @@ function App() {
   return (
     <div className="min-h-screen p-8">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-white drop-shadow-md">
-          Gestor de Tareas
-        </h1>
+     <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+  <h1 className="text-3xl font-bold text-white drop-shadow-md">
+    Gestor de Tareas
+  </h1>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg shadow-md transition"
-        >
-          + Agregar tarea
-        </button>
-      </div>
+  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+    <div className="flex items-center gap-2">
+      <label
+        htmlFor="filtro"
+       className="text-gray-700 font-medium"
+      >
+        Filtrar:
+      </label>
+
+      <select
+        id="filtro"
+        value={filtro}
+        onChange={(e) => setFiltro(e.target.value)}
+        className="bg-white rounded-lg px-4 py-2 shadow-md outline-none"
+      >
+        <option value="Todas">Todas</option>
+<option value="Pendiente">Pendiente</option>
+<option value="En proceso">En proceso</option>
+<option value="Finalizado">Finalizado</option>
+      </select>
+    </div>
+
+    <button
+      onClick={() => setShowModal(true)}
+      className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg shadow-md transition"
+    >
+      + Agregar tarea
+    </button>
+  </div>
+</div>
 
       {/* Columnas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[80vh]">
-        {renderColumna("Pendiente")}
-        {renderColumna("En proceso")}
-        {renderColumna("Finalizado")}
-      </div>
+    <div
+  className={`grid gap-6 min-h-[80vh] ${
+    filtro === "Todas" ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1"
+  }`}
+>
+  {(filtro === "Todas" || filtro === "Pendiente") &&
+    renderColumna("Pendiente")}
 
+  {(filtro === "Todas" || filtro === "En proceso") &&
+    renderColumna("En proceso")}
+
+  {(filtro === "Todas" || filtro === "Finalizado") &&
+    renderColumna("Finalizado")}
+</div>
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
