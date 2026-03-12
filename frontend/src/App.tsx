@@ -26,6 +26,7 @@ function App() {
 
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [tareaAEliminar, setTareaAEliminar] = useState<number | null>(null);
+  const [busqueda, setBusqueda] = useState("");
 
 
 
@@ -223,7 +224,7 @@ const handleDragEnd = async (event: DragEndEvent) => {
 
 
     const renderColumna = (estadoColumna: Estado) => {
-      const tareasFiltradas = tareas.filter((t) => t.estado === estadoColumna && (filtro === "TODAS" || filtro === estadoColumna));
+      const tareasFiltradas = tareas.filter((t) => t.estado === estadoColumna && (filtro === "TODAS" || filtro === estadoColumna) && (t.titulo.toLowerCase().includes(busqueda.toLowerCase()) || t.descripcion.toLowerCase().includes(busqueda.toLowerCase())));
 
       return (
         <div className="bg-white/80 rounded-xl p-6 shadow-xl flex flex-col">
@@ -279,7 +280,7 @@ const handleDragEnd = async (event: DragEndEvent) => {
 
 
 
-
+<input type="text" placeholder="🔍 Buscar tarea..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className="w-full max-w-md px-4 py-2 rounded-lg border bg-white/80 mb-4 shadow-sm" />
 
         <div className="flex gap-2 mb-4">
   {(["TODAS", "PENDIENTE", "EN_PROCESO", "FINALIZADO"] as const).map((f) => (
