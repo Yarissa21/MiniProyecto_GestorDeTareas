@@ -27,6 +27,10 @@ function App() {
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [tareaAEliminar, setTareaAEliminar] = useState<number | null>(null);
 
+
+
+  const [filtro, setFiltro] = useState<Estado | "TODAS">("TODAS");
+
   
 
   useEffect(() => {
@@ -219,7 +223,7 @@ const handleDragEnd = async (event: DragEndEvent) => {
 
 
     const renderColumna = (estadoColumna: Estado) => {
-      const tareasFiltradas = tareas.filter((t) => t.estado === estadoColumna);
+      const tareasFiltradas = tareas.filter((t) => t.estado === estadoColumna && (filtro === "TODAS" || filtro === estadoColumna));
 
       return (
         <div className="bg-white/80 rounded-xl p-6 shadow-xl flex flex-col">
@@ -273,13 +277,40 @@ const handleDragEnd = async (event: DragEndEvent) => {
           </p>
         )}
 
+
+
+
+
+        <div className="flex gap-2 mb-4">
+  {(["TODAS", "PENDIENTE", "EN_PROCESO", "FINALIZADO"] as const).map((f) => (
+    <button
+      key={f}
+      onClick={() => setFiltro(f)}
+      className={`px-3 py-1 rounded-full text-sm font-semibold transition ${
+        filtro === f
+          ? "bg-purple-600 text-white"
+          : "bg-white/70 text-gray-700 hover:bg-white"
+      }`}
+    >
+      {f === "TODAS" ? "Todas" : f === "PENDIENTE" ? "Pendiente" : f === "EN_PROCESO" ? "En proceso" : "Finalizado"}
+    </button>
+  ))}
+</div>
+
+
+
+
+
+
+
+
         <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[80vh]">
-          {renderColumna("PENDIENTE")}
-          {renderColumna("EN_PROCESO")}
-          {renderColumna("FINALIZADO")}
-        </div>
+  {(filtro === "TODAS" || filtro === "PENDIENTE") && renderColumna("PENDIENTE")}
+  {(filtro === "TODAS" || filtro === "EN_PROCESO") && renderColumna("EN_PROCESO")}
+  {(filtro === "TODAS" || filtro === "FINALIZADO") && renderColumna("FINALIZADO")}
+</div>
         </DndContext>
       </div>
       
