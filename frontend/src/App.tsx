@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 type Estado = "Pendiente" | "En proceso" | "Finalizado";
+type Filtro = "Todas" | "Pendiente" | "En proceso" | "Finalizado";
 
 interface Tarea {
   id: number;
@@ -91,36 +92,26 @@ function App() {
     );
   };
 
-  return (
+   return (
     <div className="min-h-screen p-8">
       {/* Header */}
-     <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
-  <h1 className="text-3xl font-bold text-white drop-shadow-md">
-    Gestor de Tareas
-  </h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-white drop-shadow-md">
+          Gestor de Tareas
+        </h1>
 
-  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-    <div className="flex items-center gap-2">
-      <label
-        htmlFor="filtro"
-       className="text-gray-700 font-medium"
-      >
-        Filtrar:
-      </label>
-
-      <select
-        id="filtro"
-        value={filtro}
-        onChange={(e) => setFiltro(e.target.value)}
-        className="bg-white rounded-lg px-4 py-2 shadow-md outline-none"
-      >
-        <option value="Todas">Todas</option>
-<option value="Pendiente">Pendiente</option>
-<option value="En proceso">En proceso</option>
-<option value="Finalizado">Finalizado</option>
-      </select>
-    </div>
-
+        <div className="flex items-center gap-3">
+          <select
+            value={filtro}
+            onChange={(e) => setFiltro(e.target.value as Filtro)}
+            className="bg-white text-black px-4 py-2 rounded-lg shadow-md outline-none"
+          >
+            <option value="Todas">Todas</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="En proceso">En proceso</option>
+            <option value="Finalizado">Finalizado</option>
+          </select>
+          
     <button
       onClick={() => setShowModal(true)}
       className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg shadow-md transition"
