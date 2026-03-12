@@ -100,4 +100,40 @@ export class TareasService {
     return tareas;
   }
 
+  async buscarPorTexto(texto: string) {
+  const tareas = await this.prisma.tarea.findMany({
+    where: {
+      OR: [
+        {
+          titulo: {
+            contains: texto,
+            mode: 'insensitive',
+          },
+        },
+        {
+          descripcion: {
+            contains: texto,
+            mode: 'insensitive',
+          },
+        },
+      ],
+    },
+    orderBy: {
+      fechaEntrega: 'asc',
+    },
+    select: {
+      id: true,
+      titulo: true,
+      descripcion: true,
+      fechaEntrega: true,
+      estado: true,
+    },
+  });
+
+  if (tareas.length === 0) {
+    return { mensaje: 'No se encontraron tareas con ese texto.' };
+  }
+
+  return tareas;
+}
 }

@@ -43,4 +43,9 @@ export class TareasController {
     return this.tareasService.filtrarPorEstado(estado);
   }
 
+  @Get('buscar')
+async buscar(@Query('texto') texto: string) {
+  return this.tareasService.buscarPorTexto(texto);
+}
+
 }
