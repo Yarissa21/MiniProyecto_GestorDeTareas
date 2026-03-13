@@ -147,6 +147,9 @@ export class TareasService {
   async buscarPorTexto(texto: string) {
     try {
 
+      if (!texto) {
+        return { mensaje: 'Debe proporcionar un texto para buscar.' };
+      }
       const tareas = await this.prisma.tarea.findMany({
         where: {
           OR: [
