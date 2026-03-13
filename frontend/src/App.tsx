@@ -43,55 +43,48 @@ function App() {
 
   const [loading, setLoading] = useState(false);
 
+
+const total = tareas.length;
+const pendientes = tareas.filter((t) => t.estado === "PENDIENTE").length;
+const enProceso = tareas.filter((t) => t.estado === "EN_PROCESO").length;
+const finalizadas = tareas.filter((t) => t.estado === "FINALIZADO").length;
+
   /* ---------------------- USE EFFECT ---------------------- */
 
   useEffect(() => {
     fetch("http://localhost:3000/tareas")
-      .then((res) => res.json())
-      .then((data) => {
-
+      .then(res => res.json())
+      .then(data => {
         if (data.mensaje) {
           setMensajeConfirmacion(data.mensaje);
           setTareas([]);
           return;
         }
-
         setTareas(data);
       })
-      .catch(() => {
-        setMensajeConfirmacion("Error al obtener tareas.");
-      });
+      .catch(() => setMensajeConfirmacion("Error al obtener tareas."));
   }, []);
 
   useEffect(() => {
-
-    if (!busqueda.trim() && filtro === "TODAS") return;
-
     let url = "http://localhost:3000/tareas";
 
     if (busqueda.trim()) {
       url = `http://localhost:3000/tareas/buscar?texto=${busqueda}`;
-    } 
-    else if (filtro !== "TODAS") {
+    } else if (filtro !== "TODAS") {
       url = `http://localhost:3000/tareas/filtrar?estado=${filtro}`;
     }
 
     fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
-
+      .then(res => res.json())
+      .then(data => {
         if (data.mensaje) {
           setMensajeConfirmacion(data.mensaje);
           setTareas([]);
           return;
         }
-
         setTareas(data);
       })
-      .catch(() => {
-        setMensajeConfirmacion("Error al obtener tareas");
-      });
-
+      .catch(() => setMensajeConfirmacion("Error al obtener tareas"));
   }, [busqueda, filtro]);
 
   /* ---------------------- UTILIDADES ---------------------- */
@@ -184,18 +177,20 @@ function App() {
         return;
       }
 
-      if (editandoId !== null) {
-        setTareas(
-          tareas.map((t) => (t.id === editandoId ? tareaRespuesta : t))
-        );
+      const nuevasTareas =
+        editandoId !== null
+          ? tareas.map((t) => (t.id === editandoId ? tareaRespuesta : t))
+          : [...tareas, tareaRespuesta];
 
-        setMensajeConfirmacion("¡Tarea actualizada correctamente!");
-      } else {
-        setTareas([...tareas, tareaRespuesta]);
+      nuevasTareas.sort(
+        (a, b) => new Date(a.fechaEntrega).getTime() - new Date(b.fechaEntrega).getTime()
+      );
 
-        setMensajeConfirmacion("¡Tarea creada correctamente!");
-      }
+      setTareas(nuevasTareas);
 
+      setMensajeConfirmacion(
+        editandoId !== null ? "¡Tarea actualizada correctamente!" : "¡Tarea creada correctamente!"
+      );
       setTimeout(() => setMensajeConfirmacion(""), 3000);
 
       setTitulo("");
@@ -208,6 +203,7 @@ function App() {
     } catch (error) {
       console.error(error);
       setMensajeConfirmacion("Ocurrió un error al guardar la tarea.");
+      setTimeout(() => setMensajeConfirmacion(""), 3000);
     } finally {
       setLoading(false);
     }
@@ -290,15 +286,24 @@ function App() {
           </p>
         )}
 
-        {tarea.fechaEntrega && (
+        {tarea.estado === "FINALIZADO" ? (
           <div
-            className={`absolute top-2 right-2 w-8 h-8 rounded-full shadow-md ${obtenerColorUrgencia(
-              tarea.fechaEntrega
-            )}`}
-            title={`Entrega: ${new Date(
-              tarea.fechaEntrega
-            ).toLocaleDateString()}`}
-          ></div>
+            className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded-full shadow-md"
+            title="Tarea finalizada"
+          >
+            ✔
+          </div>
+        ) : (
+          tarea.fechaEntrega && (
+            <div
+              className={`absolute top-2 right-2 w-8 h-8 rounded-full shadow-md ${obtenerColorUrgencia(
+                tarea.fechaEntrega
+              )}`}
+              title={`Entrega: ${new Date(
+                tarea.fechaEntrega
+              ).toLocaleDateString()}`}
+            ></div>
+          )
         )}
 
         <div className="flex gap-3 mt-3">
@@ -374,21 +379,15 @@ function App() {
 
   /* ---------------------- COLUMNAS ---------------------- */
 
-  const renderColumna = (estadoColumna: Estado) => {
-    const tareasFiltradas = tareas.filter(
-      (t) => t.estado === estadoColumna
-    );
-
+  const renderColumna = (estadoColumna: Estado, lista: Tarea[]) => {
     return (
       <div className="bg-white/80 rounded-xl p-6 shadow-xl flex flex-col">
         <h2 className="text-xl font-semibold mb-4">{estadoColumna}</h2>
 
         <DroppableColumna estado={estadoColumna}>
-          {tareasFiltradas.length === 0 && (
-            <p className="text-gray-500">Sin tareas</p>
-          )}
+          {lista.length === 0 && <p className="text-gray-500">Sin tareas</p>}
 
-          {tareasFiltradas.map((tarea) => (
+          {lista.map((tarea) => (
             <DraggableTarea key={tarea.id} tarea={tarea} />
           ))}
         </DroppableColumna>
@@ -464,12 +463,12 @@ function App() {
                 }`}
               >
                 {f === "TODAS"
-                  ? "Todas"
+                  ? `Todas (${total})`
                   : f === "PENDIENTE"
-                  ? "Pendiente"
+                  ? `Pendiente (${pendientes})`
                   : f === "EN_PROCESO"
-                  ? "En proceso"
-                  : "Finalizado"}
+                  ? `En proceso (${enProceso})`
+                  : `Finalizado (${finalizadas})`}
               </button>
             )
           )}
@@ -484,13 +483,22 @@ function App() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[80vh]">
 
             {(filtro === "TODAS" || filtro === "PENDIENTE") &&
-              renderColumna("PENDIENTE")}
+              renderColumna(
+                "PENDIENTE",
+                tareas.filter((t) => t.estado === "PENDIENTE")
+              )}
 
             {(filtro === "TODAS" || filtro === "EN_PROCESO") &&
-              renderColumna("EN_PROCESO")}
+              renderColumna(
+                "EN_PROCESO",
+                tareas.filter((t) => t.estado === "EN_PROCESO")
+              )}
 
             {(filtro === "TODAS" || filtro === "FINALIZADO") &&
-              renderColumna("FINALIZADO")}
+              renderColumna(
+                "FINALIZADO",
+                tareas.filter((t) => t.estado === "FINALIZADO")
+              )}
 
           </div>
 
@@ -556,7 +564,18 @@ function App() {
             <div className="flex justify-end gap-3">
 
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setErrorTitulo("");
+                  setErrorDescripcion("");
+                  setErrorFecha("");
+                  setMensajeConfirmacion("");
+                  setTitulo("");
+                  setDescripcion("");
+                  setEstado("PENDIENTE");
+                  setFechaEntrega("");
+                  setEditandoId(null);
+                }}
                 className="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400"
               >
                 Cancelar
