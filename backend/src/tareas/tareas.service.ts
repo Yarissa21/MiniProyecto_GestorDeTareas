@@ -58,16 +58,30 @@ export class TareasService {
     }
   }
 
- async actualizarTarea(id: number, data: CreateTareaDto) {
-    return this.prisma.tarea.update({
-      where: { id: id },
-      data: {
-        titulo: data.titulo,
-        descripcion: data.descripcion,
-        fechaEntrega: data.fechaEntrega,
-        estado: data.estado,
-      },
-    });
+  async actualizarTarea(id: number, data: CreateTareaDto) {
+    try {
+
+      const tarea = await this.prisma.tarea.findUnique({
+        where: { id }
+      });
+
+      if (!tarea) {
+        return { mensaje: 'La tarea no existe.' };
+      }
+
+      return await this.prisma.tarea.update({
+        where: { id },
+        data: {
+          titulo: data.titulo,
+          descripcion: data.descripcion,
+          fechaEntrega: data.fechaEntrega,
+          estado: data.estado,
+        },
+      });
+
+    } catch (error) {
+      return { mensaje: 'Error al actualizar la tarea.' };
+    }
   }
   
   async eliminarTarea(id: number) {
