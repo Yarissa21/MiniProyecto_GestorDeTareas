@@ -145,39 +145,38 @@ export class TareasService {
   }
 
   async buscarPorTexto(texto: string) {
-  const tareas = await this.prisma.tarea.findMany({
-    where: {
-      OR: [
-        {
-          titulo: {
-            contains: texto,
-            mode: 'insensitive',
-          },
-        },
-        {
-          descripcion: {
-            contains: texto,
-            mode: 'insensitive',
-          },
-        },
-      ],
-    },
-    orderBy: {
-      fechaEntrega: 'asc',
-    },
-    select: {
-      id: true,
-      titulo: true,
-      descripcion: true,
-      fechaEntrega: true,
-      estado: true,
-    },
-  });
+    try {
 
-  if (tareas.length === 0) {
-    return { mensaje: 'No se encontraron tareas con ese texto.' };
+      const tareas = await this.prisma.tarea.findMany({
+        where: {
+          OR: [
+            {
+              titulo: {
+                contains: texto,
+                mode: 'insensitive',
+              },
+            },
+            {
+              descripcion: {
+                contains: texto,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+        orderBy: {
+          fechaEntrega: 'asc',
+        },
+      });
+
+      if (tareas.length === 0) {
+        return { mensaje: 'No se encontraron tareas con ese texto.' };
+      }
+
+      return tareas;
+
+    } catch (error) {
+      return { mensaje: 'Error al buscar tareas.' };
+    }
   }
-
-  return tareas;
-}
 }
