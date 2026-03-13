@@ -95,21 +95,27 @@ export class TareasService {
   }
 
   async cambiarEstado(id: number, estado: Estado) {
-   const tarea = await this.prisma.tarea.findUnique({
-    where: { id: id },
-   });
+    try {
 
-   if (!tarea) {
-    return { mensaje: 'Tarea no encontrada' };
-   }
+      const tarea = await this.prisma.tarea.findUnique({
+        where: { id },
+      });
 
-   return this.prisma.tarea.update({
-     where: { id: id },
-     data: {
-      estado: estado,
-     },
-   });
- }
+      if (!tarea) {
+        return { mensaje: 'Tarea no encontrada' };
+      }
+
+      return await this.prisma.tarea.update({
+        where: { id },
+        data: {
+          estado: estado,
+        },
+      });
+
+    } catch (error) {
+      return { mensaje: 'Error al cambiar el estado de la tarea.' };
+    }
+  }
 
  async filtrarPorEstado(estado?: Estado) {
     let tareas;
