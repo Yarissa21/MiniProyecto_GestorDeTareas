@@ -117,26 +117,31 @@ export class TareasService {
     }
   }
 
- async filtrarPorEstado(estado?: Estado) {
-    let tareas;
+  async filtrarPorEstado(estado?: Estado) {
+    try {
 
-    if (estado) {
-      tareas = await this.prisma.tarea.findMany({
-        where: { estado },
-        orderBy: { fechaEntrega: 'asc' },
-        select: { id: true, titulo: true, descripcion: true, fechaEntrega: true, estado: true },
-      });
-    } else {
-      tareas = await this.prisma.tarea.findMany({
-        orderBy: { fechaEntrega: 'asc' },
-        select: { id: true, titulo: true, descripcion: true, fechaEntrega: true, estado: true },
-      });
-    }
+      let tareas;
 
-    if (tareas.length === 0) {
-      return { mensaje: 'No hay tareas para el filtro seleccionado.' };
+      if (estado) {
+        tareas = await this.prisma.tarea.findMany({
+          where: { estado },
+          orderBy: { fechaEntrega: 'asc' },
+        });
+      } else {
+        tareas = await this.prisma.tarea.findMany({
+          orderBy: { fechaEntrega: 'asc' },
+        });
+      }
+
+      if (tareas.length === 0) {
+        return { mensaje: 'No hay tareas para el filtro seleccionado.' };
+      }
+
+      return tareas;
+
+    } catch (error) {
+      return { mensaje: 'Error al filtrar las tareas.' };
     }
-    return tareas;
   }
 
   async buscarPorTexto(texto: string) {
