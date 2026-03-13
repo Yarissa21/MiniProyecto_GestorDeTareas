@@ -33,24 +33,29 @@ export class TareasService {
   }
 
   async listarTareas() {
-    const tareas = await this.prisma.tarea.findMany({
-      orderBy: {
-        fechaEntrega: 'asc',
-      },
-      select: {
-        id: true,
-        titulo: true,
-        descripcion: true,
-        fechaEntrega: true,
-        estado: true,
-      },
-    });
+    try {
+      const tareas = await this.prisma.tarea.findMany({
+        orderBy: {
+          fechaEntrega: 'asc',
+        },
+        select: {
+          id: true,
+          titulo: true,
+          descripcion: true,
+          fechaEntrega: true,
+          estado: true,
+        },
+      });
 
-    if (tareas.length === 0) {
-      return { mensaje: 'No hay tareas registradas.' };
+      if (tareas.length === 0) {
+        return { mensaje: 'No hay tareas registradas.' };
+      }
+
+      return tareas;
+
+    } catch (error) {
+      return { mensaje: 'Error al obtener las tareas.' };
     }
-
-    return tareas;
   }
 
  async actualizarTarea(id: number, data: CreateTareaDto) {
