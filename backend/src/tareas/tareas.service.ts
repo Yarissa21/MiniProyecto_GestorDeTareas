@@ -8,47 +8,80 @@ export class TareasService {
   constructor(private prisma: PrismaService) {}
 
   async crearTarea(data: CreateTareaDto) {
-    return this.prisma.tarea.create({
-      data: {
-        titulo: data.titulo,
-        descripcion: data.descripcion,
-        fechaEntrega: data.fechaEntrega,
-        estado: data.estado,
-      },
-    });
+    try {
+      if (!data.titulo) {
+        return { mensaje: 'El título es obligatorio' };
+      }
+      if (!data.descripcion) {
+        return { mensaje: 'La descripcion es obligadoria'};
+      }
+      if (!data.fechaEntrega) {
+        return { mensaje: 'La fecha es obligadoria'};
+      }
+
+      return await this.prisma.tarea.create({
+        data: {
+          titulo: data.titulo,
+          descripcion: data.descripcion,
+          fechaEntrega: data.fechaEntrega,
+          estado: data.estado,
+        },
+      });
+    } catch (error) {
+      return { mensaje: 'Error al crear la tarea' };
+    }
   }
 
   async listarTareas() {
-    const tareas = await this.prisma.tarea.findMany({
-      orderBy: {
-        fechaEntrega: 'asc',
-      },
-      select: {
-        id: true,
-        titulo: true,
-        descripcion: true,
-        fechaEntrega: true,
-        estado: true,
-      },
-    });
+    try {
+      const tareas = await this.prisma.tarea.findMany({
+        orderBy: {
+          fechaEntrega: 'asc',
+        },
+        select: {
+          id: true,
+          titulo: true,
+          descripcion: true,
+          fechaEntrega: true,
+          estado: true,
+        },
+      });
 
-    if (tareas.length === 0) {
-      return { mensaje: 'No hay tareas registradas.' };
+      if (tareas.length === 0) {
+        return { mensaje: 'No hay tareas registradas.' };
+      }
+
+      return tareas;
+
+    } catch (error) {
+      return { mensaje: 'Error al obtener las tareas.' };
     }
-
-    return tareas;
   }
 
- async actualizarTarea(id: number, data: CreateTareaDto) {
-    return this.prisma.tarea.update({
-      where: { id: id },
-      data: {
-        titulo: data.titulo,
-        descripcion: data.descripcion,
-        fechaEntrega: data.fechaEntrega,
-        estado: data.estado,
-      },
-    });
+  async actualizarTarea(id: number, data: CreateTareaDto) {
+    try {
+
+      const tarea = await this.prisma.tarea.findUnique({
+        where: { id }
+      });
+
+      if (!tarea) {
+        return { mensaje: 'La tarea no existe.' };
+      }
+
+      return await this.prisma.tarea.update({
+        where: { id },
+        data: {
+          titulo: data.titulo,
+          descripcion: data.descripcion,
+          fechaEntrega: data.fechaEntrega,
+          estado: data.estado,
+        },
+      });
+
+    } catch (error) {
+      return { mensaje: 'Error al actualizar la tarea.' };
+    }
   }
   
   async eliminarTarea(id: number) {
@@ -62,78 +95,91 @@ export class TareasService {
   }
 
   async cambiarEstado(id: number, estado: Estado) {
-   const tarea = await this.prisma.tarea.findUnique({
-    where: { id: id },
-   });
+    try {
 
-   if (!tarea) {
-    return { mensaje: 'Tarea no encontrada' };
-   }
-
-   return this.prisma.tarea.update({
-     where: { id: id },
-     data: {
-      estado: estado,
-     },
-   });
- }
-
- async filtrarPorEstado(estado?: Estado) {
-    let tareas;
-
-    if (estado) {
-      tareas = await this.prisma.tarea.findMany({
-        where: { estado },
-        orderBy: { fechaEntrega: 'asc' },
-        select: { id: true, titulo: true, descripcion: true, fechaEntrega: true, estado: true },
+      const tarea = await this.prisma.tarea.findUnique({
+        where: { id },
       });
-    } else {
-      tareas = await this.prisma.tarea.findMany({
-        orderBy: { fechaEntrega: 'asc' },
-        select: { id: true, titulo: true, descripcion: true, fechaEntrega: true, estado: true },
-      });
-    }
 
-    if (tareas.length === 0) {
-      return { mensaje: 'No hay tareas para el filtro seleccionado.' };
+      if (!tarea) {
+        return { mensaje: 'Tarea no encontrada' };
+      }
+
+      return await this.prisma.tarea.update({
+        where: { id },
+        data: {
+          estado: estado,
+        },
+      });
+
+    } catch (error) {
+      return { mensaje: 'Error al cambiar el estado de la tarea.' };
     }
-    return tareas;
+  }
+
+  async filtrarPorEstado(estado?: Estado) {
+    try {
+
+      let tareas;
+
+      if (estado) {
+        tareas = await this.prisma.tarea.findMany({
+          where: { estado },
+          orderBy: { fechaEntrega: 'asc' },
+        });
+      } else {
+        tareas = await this.prisma.tarea.findMany({
+          orderBy: { fechaEntrega: 'asc' },
+        });
+      }
+
+      if (tareas.length === 0) {
+        return { mensaje: 'No hay tareas para el filtro seleccionado.' };
+      }
+
+      return tareas;
+
+    } catch (error) {
+      return { mensaje: 'Error al filtrar las tareas.' };
+    }
   }
 
   async buscarPorTexto(texto: string) {
-  const tareas = await this.prisma.tarea.findMany({
-    where: {
-      OR: [
-        {
-          titulo: {
-            contains: texto,
-            mode: 'insensitive',
-          },
-        },
-        {
-          descripcion: {
-            contains: texto,
-            mode: 'insensitive',
-          },
-        },
-      ],
-    },
-    orderBy: {
-      fechaEntrega: 'asc',
-    },
-    select: {
-      id: true,
-      titulo: true,
-      descripcion: true,
-      fechaEntrega: true,
-      estado: true,
-    },
-  });
+    try {
 
-  if (tareas.length === 0) {
-    return { mensaje: 'No se encontraron tareas con ese texto.' };
+      if (!texto) {
+        return { mensaje: 'Debe proporcionar un texto para buscar.' };
+      }
+      const tareas = await this.prisma.tarea.findMany({
+        where: {
+          OR: [
+            {
+              titulo: {
+                contains: texto,
+                mode: 'insensitive',
+              },
+            },
+            {
+              descripcion: {
+                contains: texto,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+        orderBy: {
+          fechaEntrega: 'asc',
+        },
+      });
+
+      if (tareas.length === 0) {
+        return { mensaje: 'No se encontraron tareas con ese texto.' };
+      }
+
+      return tareas;
+
+    } catch (error) {
+      return { mensaje: 'Error al buscar tareas.' };
+    }
   }
-
-  return tareas;
-}
 }
