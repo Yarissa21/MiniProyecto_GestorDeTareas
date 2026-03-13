@@ -8,14 +8,28 @@ export class TareasService {
   constructor(private prisma: PrismaService) {}
 
   async crearTarea(data: CreateTareaDto) {
-    return this.prisma.tarea.create({
-      data: {
-        titulo: data.titulo,
-        descripcion: data.descripcion,
-        fechaEntrega: data.fechaEntrega,
-        estado: data.estado,
-      },
-    });
+    try {
+      if (!data.titulo) {
+        return { mensaje: 'El título es obligatorio' };
+      }
+      if (!data.descripcion) {
+        return { mensaje: 'La descripcion es obligadoria'};
+      }
+      if (!data.fechaEntrega) {
+        return { mensaje: 'La fecha es obligadoria'};
+      }
+
+      return await this.prisma.tarea.create({
+        data: {
+          titulo: data.titulo,
+          descripcion: data.descripcion,
+          fechaEntrega: data.fechaEntrega,
+          estado: data.estado,
+        },
+      });
+    } catch (error) {
+      return { mensaje: 'Error al crear la tarea' };
+    }
   }
 
   async listarTareas() {
