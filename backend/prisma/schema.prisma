@@ -18,6 +18,7 @@ model Tarea {
   titulo         String
   descripcion    String?
   fechaEntrega   DateTime
+  estadoActivo Boolean @default(true)
   estado         Estado    @default(PENDIENTE)
   creadaEn       DateTime  @default(now())
 }

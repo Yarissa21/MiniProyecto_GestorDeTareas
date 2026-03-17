@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsDateString, IsEnum } from 'class-validator';
+import { IsString, IsDateString, IsEnum } from 'class-validator';
 import { Estado } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -8,7 +8,6 @@ export class CreateTareaDto {
   titulo: string;
 
   @ApiProperty({ example: 'Diapositivas para la reunión del lunes', required: false })
-  @IsOptional()
   @IsString()
   descripcion?: string;
 
@@ -19,4 +18,7 @@ export class CreateTareaDto {
   @ApiProperty({ enum: Estado, example: Estado.PENDIENTE })
   @IsEnum(Estado)
   estado: Estado;
+
+  @ApiProperty({ example: true })
+  estadoActivo?: boolean;
 }
