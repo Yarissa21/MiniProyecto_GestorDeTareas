@@ -7,11 +7,11 @@ export class CreateTareaDto {
   @IsString()
   titulo: string;
 
-  @ApiProperty({ example: 'Diapositivas para la reunión del lunes', required: false })
+  @ApiProperty({ example: 'Diapositivas para la reunión del lunes' })
   @IsString()
   descripcion?: string;
 
-  @ApiProperty({ example: '2026-04-01T12:00:00.000Z' })
+  @ApiProperty({ example: '2026-04-01' })
   @IsDateString()
   fechaEntrega: Date;
 

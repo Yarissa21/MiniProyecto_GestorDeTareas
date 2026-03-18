@@ -13,10 +13,10 @@ export class TareasService {
         return { mensaje: 'El título es obligatorio' };
       }
       if (!data.descripcion) {
-        return { mensaje: 'La descripcion es obligadoria'};
+        return { mensaje: 'La descripcion es obligatoria'};
       }
       if (!data.fechaEntrega) {
-        return { mensaje: 'La fecha es obligadoria'};
+        return { mensaje: 'La fecha es obligatoria'};
       }
         const fecha = new Date(data.fechaEntrega);
         fecha.setHours(23, 59, 59, 999);
@@ -74,7 +74,15 @@ export class TareasService {
       if (!tarea || !tarea.estadoActivo) {
         return { mensaje: 'La tarea no existe.' };
       }
-      
+        if (!data.titulo) {
+          return { mensaje: 'El título es obligatorio' };
+        }
+        if (!data.descripcion) {
+          return { mensaje: 'La descripcion es obligatoria'};
+        }
+        if (!data.fechaEntrega) {
+          return { mensaje: 'La fecha es obligatoria'};
+        }
         const fecha = new Date(data.fechaEntrega);
         fecha.setHours(23, 59, 59, 999);
 
@@ -83,7 +91,7 @@ export class TareasService {
         data: {
           titulo: data.titulo,
           descripcion: data.descripcion,
-          fechaEntrega: data.fechaEntrega,
+          fechaEntrega: fecha,
           estado: data.estado,
         },
       });
