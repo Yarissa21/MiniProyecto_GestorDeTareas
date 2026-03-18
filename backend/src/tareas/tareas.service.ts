@@ -13,18 +13,21 @@ export class TareasService {
         return { mensaje: 'El título es obligatorio' };
       }
       if (!data.descripcion) {
-        return { mensaje: 'La descripcion es obligadoria'};
+        return { mensaje: 'La descripcion es obligatoria'};
       }
       if (!data.fechaEntrega) {
-        return { mensaje: 'La fecha es obligadoria'};
+        return { mensaje: 'La fecha es obligatoria'};
       }
+        const fecha = new Date(data.fechaEntrega);
+        fecha.setHours(23, 59, 59, 999);
 
       return await this.prisma.tarea.create({
         data: {
           titulo: data.titulo,
           descripcion: data.descripcion,
-          fechaEntrega: data.fechaEntrega,
+          fechaEntrega: fecha,
           estado: data.estado,
+          estadoActivo: true,
         },
       });
     } catch (error) {
@@ -35,6 +38,9 @@ export class TareasService {
   async listarTareas() {
     try {
       const tareas = await this.prisma.tarea.findMany({
+        where: {
+          estadoActivo: true,
+        },
         orderBy: {
           fechaEntrega: 'asc',
         },
@@ -65,16 +71,27 @@ export class TareasService {
         where: { id }
       });
 
-      if (!tarea) {
+      if (!tarea || !tarea.estadoActivo) {
         return { mensaje: 'La tarea no existe.' };
       }
+        if (!data.titulo) {
+          return { mensaje: 'El título es obligatorio' };
+        }
+        if (!data.descripcion) {
+          return { mensaje: 'La descripcion es obligatoria'};
+        }
+        if (!data.fechaEntrega) {
+          return { mensaje: 'La fecha es obligatoria'};
+        }
+        const fecha = new Date(data.fechaEntrega);
+        fecha.setHours(23, 59, 59, 999);
 
       return await this.prisma.tarea.update({
         where: { id },
         data: {
           titulo: data.titulo,
           descripcion: data.descripcion,
-          fechaEntrega: data.fechaEntrega,
+          fechaEntrega: fecha,
           estado: data.estado,
         },
       });
@@ -86,11 +103,24 @@ export class TareasService {
   
   async eliminarTarea(id: number) {
     try {
-      return await this.prisma.tarea.delete({
+
+      const tarea = await this.prisma.tarea.findUnique({
         where: { id },
       });
+
+      if (!tarea || !tarea.estadoActivo) {
+        return { mensaje: 'Tarea no encontrada o ya eliminada.' };
+      }
+
+      return await this.prisma.tarea.update({
+        where: { id },
+        data: {
+          estadoActivo: false,
+        },
+      });
+
     } catch (error) {
-      return { mensaje: 'Tarea no encontrada o ya eliminada.' };
+      return { mensaje: 'Error al eliminar la tarea.' };
     }
   }
 
@@ -101,7 +131,7 @@ export class TareasService {
         where: { id },
       });
 
-      if (!tarea) {
+      if (!tarea || !tarea.estadoActivo) {
         return { mensaje: 'Tarea no encontrada' };
       }
 
@@ -124,11 +154,15 @@ export class TareasService {
 
       if (estado) {
         tareas = await this.prisma.tarea.findMany({
-          where: { estado },
+          where: { 
+            estado,
+            estadoActivo: true
+          },
           orderBy: { fechaEntrega: 'asc' },
         });
       } else {
         tareas = await this.prisma.tarea.findMany({
+          where: { estadoActivo: true },
           orderBy: { fechaEntrega: 'asc' },
         });
       }
@@ -152,6 +186,7 @@ export class TareasService {
       }
       const tareas = await this.prisma.tarea.findMany({
         where: {
+          estadoActivo: true,
           OR: [
             {
               titulo: {
