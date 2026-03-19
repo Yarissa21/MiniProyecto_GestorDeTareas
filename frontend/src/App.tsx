@@ -93,7 +93,9 @@ const finalizadas = tareas.filter((t) => t.estado === "FINALIZADO").length;
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
-    const entrega = new Date(fechaEntrega);
+    const [year, month, day] = fechaEntrega.split("T")[0].split("-");
+    const entrega = new Date(Number(year), Number(month) - 1, Number(day));
+    entrega.setHours(0, 0, 0, 0);
     entrega.setHours(0, 0, 0, 0);
 
     const diffTime = entrega.getTime() - hoy.getTime();
@@ -129,8 +131,9 @@ const finalizadas = tareas.filter((t) => t.estado === "FINALIZADO").length;
       setErrorFecha("La fecha límite es obligatoria.");
       hayError = true;
     } else {
-      const fechaSeleccionada = new Date(fechaEntrega);
-      const hoy = new Date();
+      const [year, month, day] = fechaEntrega.split("-").map(Number);
+      const fechaSeleccionada = new Date(year, month - 1, day);
+      fechaSeleccionada.setHours(0, 0, 0, 0);      const hoy = new Date();
       hoy.setHours(0, 0, 0, 0);
 
       if (fechaSeleccionada < hoy) {
@@ -141,9 +144,7 @@ const finalizadas = tareas.filter((t) => t.estado === "FINALIZADO").length;
 
     if (hayError) return;
 
-    const [year, month, day] = fechaEntrega.split("-").map(Number);
-    const fechaISO = new Date(year, month - 1, day, 0, 0, 0, 0).toISOString();
-
+    const fechaISO = fechaEntrega;
     const tareaPayload = {
       titulo,
       descripcion,
@@ -282,8 +283,7 @@ const finalizadas = tareas.filter((t) => t.estado === "FINALIZADO").length;
 
         {tarea.fechaEntrega && (
           <p className="text-xs text-gray-500 mt-2">
-            📅 Entrega: {new Date(tarea.fechaEntrega).toLocaleDateString()}
-          </p>
+          📅 Entrega: {tarea.fechaEntrega.split("T")[0]}          </p>
         )}
 
         {tarea.estado === "FINALIZADO" ? (
@@ -299,9 +299,7 @@ const finalizadas = tareas.filter((t) => t.estado === "FINALIZADO").length;
               className={`absolute top-2 right-2 w-8 h-8 rounded-full shadow-md ${obtenerColorUrgencia(
                 tarea.fechaEntrega
               )}`}
-              title={`Entrega: ${new Date(
-                tarea.fechaEntrega
-              ).toLocaleDateString()}`}
+                title={`Entrega: ${tarea.fechaEntrega.split("T")[0]}`}
             ></div>
           )
         )}
