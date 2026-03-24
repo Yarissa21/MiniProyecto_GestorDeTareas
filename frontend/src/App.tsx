@@ -44,15 +44,20 @@ function App() {
   const [loading, setLoading] = useState(false);
 
 
-const total = tareas.length;
-const pendientes = tareas.filter((t) => t.estado === "PENDIENTE").length;
-const enProceso = tareas.filter((t) => t.estado === "EN_PROCESO").length;
-const finalizadas = tareas.filter((t) => t.estado === "FINALIZADO").length;
+  const total = tareas.length;
+  const pendientes = tareas.filter((t) => t.estado === "PENDIENTE").length;
+  const enProceso = tareas.filter((t) => t.estado === "EN_PROCESO").length;
+  const finalizadas = tareas.filter((t) => t.estado === "FINALIZADO").length;
+
+  const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:3000"
+    : "https://miniproyecto-gestordetareas.onrender.com";
 
   /* ---------------------- USE EFFECT ---------------------- */
 
   useEffect(() => {
-    fetch("http://localhost:3000/tareas")
+    fetch(`${API_URL}/tareas`)
       .then(res => res.json())
       .then(data => {
         if (data.mensaje) {
@@ -66,12 +71,12 @@ const finalizadas = tareas.filter((t) => t.estado === "FINALIZADO").length;
   }, []);
 
   useEffect(() => {
-    let url = "http://localhost:3000/tareas";
+    let url = `${API_URL}/tareas`;
 
     if (busqueda.trim()) {
-      url = `http://localhost:3000/tareas/buscar?texto=${busqueda}`;
+      url = `${API_URL}/tareas/buscar?texto=${busqueda}`;
     } else if (filtro !== "TODAS") {
-      url = `http://localhost:3000/tareas/filtrar?estado=${filtro}`;
+      url = `${API_URL}/tareas/filtrar?estado=${filtro}`;
     }
 
     fetch(url)
@@ -155,7 +160,7 @@ const finalizadas = tareas.filter((t) => t.estado === "FINALIZADO").length;
     try {
       setLoading(true);
 
-      let url = "http://localhost:3000/tareas";
+      let url = `${API_URL}/tareas`;
       let method = "POST";
 
       if (editandoId !== null) {
@@ -219,7 +224,7 @@ const finalizadas = tareas.filter((t) => t.estado === "FINALIZADO").length;
   const eliminarTarea = () => {
     if (tareaAEliminar === null) return;
 
-    fetch(`http://localhost:3000/tareas/${tareaAEliminar}`, {
+      fetch(`${API_URL}/tareas/${tareaAEliminar}`, {
       method: "DELETE",
     })
       .then((res) => {
@@ -356,7 +361,7 @@ const finalizadas = tareas.filter((t) => t.estado === "FINALIZADO").length;
     const tarea = tareas.find((t) => t.id === tareaId);
     if (!tarea || tarea.estado === nuevoEstado) return;
 
-    const res = await fetch(`http://localhost:3000/tareas/${tareaId}/estado`, {
+    const res = await fetch(`${API_URL}/tareas/${tareaId}/estado`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
