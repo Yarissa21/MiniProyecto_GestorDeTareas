@@ -51,8 +51,8 @@ function App() {
 
   const API_URL =
   window.location.hostname === "localhost"
-    ? "http://localhost:3000/api"
-    : "https://miniproyecto-gestordetareas.onrender.com/api";
+    ? "http://localhost:3000"
+    : "https://miniproyecto-gestordetareas.onrender.com";
 
   /* ---------------------- USE EFFECT ---------------------- */
 
